@@ -1,4 +1,3 @@
-import { writeFileSync } from 'fs';
 import { parse } from 'csv-parse/sync';
 
 export const config = {
@@ -39,8 +38,7 @@ export default async function handler(req, res) {
       resumo[loja].lucro += isNaN(lucro) ? 0 : lucro;
     }
 
-    writeFileSync("/tmp/dados.json", JSON.stringify(resumo));
-    return res.status(200).send("Upload concluído! Lojas: " + Object.keys(resumo).join(", "));
+    return res.status(200).json({ mensagem: "Upload concluído!", lojas: Object.keys(resumo), resumo });
   } catch (err) {
     console.error("Erro na função upload:", err);
     return res.status(500).send("Erro interno: " + err.message);
