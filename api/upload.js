@@ -21,6 +21,9 @@ function parseCSV(fileContent) {
     trim: true,
   });
 
+  console.log('🔍 Registros lidos do CSV:', records.length);
+  console.log('🔍 Primeira linha:', records[0]);
+
   return records
     .filter((row) => limparValor(row['Preço Total']) > 0)
     .map((row) => ({
@@ -40,14 +43,14 @@ export default async function handler(req, res) {
 
     const buffer = Buffer.concat(chunks);
     const fileContent = buffer.toString('utf-8');
+    console.log('📝 CSV recebido com tamanho:', buffer.length);
+
     const vendas = parseCSV(fileContent);
 
-    // Aqui você pode salvar os dados onde quiser
-    console.log('Vendas processadas:', vendas.length);
-
+    console.log('✅ Total de vendas processadas:', vendas.length);
     res.status(200).json({ message: 'Planilha processada com sucesso!', total: vendas.length });
   } catch (error) {
-    console.error('Erro ao processar a planilha:', error);
+    console.error('❌ Erro ao processar planilha:', error);
     res.status(500).json({ error: 'Erro interno ao processar a planilha.' });
   }
 }
