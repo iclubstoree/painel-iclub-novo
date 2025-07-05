@@ -1,29 +1,15 @@
 
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>Painel MIX</title>
+  <title>Painel Admin</title>
 </head>
 <body>
   <h1>Painel MIX</h1>
-  <div id="dados"></div>
-  <script>
-    fetch('dados.json')
-      .then(res => res.json())
-      .then(data => {
-        document.getElementById('dados').innerHTML = `
-          <p>Total de produtos vendidos: ${
-            data.qtd
-          }</p>
-          <p>Valor total vendido: R$ ${
-            data.vendas.toFixed(2)
-          }</p>
-          <p>Lucro total: R$ ${
-            data.lucro.toFixed(2)
-          }</p>
-        `;
-      });
-  </script>
+  <form action="/api/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" required>
+    <button type="submit">Enviar</button>
+  </form>
 </body>
 </html>

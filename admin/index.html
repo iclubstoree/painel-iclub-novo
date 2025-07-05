@@ -1,24 +1,15 @@
 
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head><meta charset="UTF-8"><title>Login</title></head>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Painel Admin</title>
+</head>
 <body>
-  <h2>Login</h2>
-  <form onsubmit="event.preventDefault(); login();">
-    <input type="text" id="user" placeholder="Usuário" required><br>
-    <input type="password" id="pass" placeholder="Senha" required><br>
-    <button type="submit">Entrar</button>
+  <h1>Painel ADMIN</h1>
+  <form action="/api/upload" method="post" enctype="multipart/form-data">
+    <input type="file" name="file" required>
+    <button type="submit">Enviar</button>
   </form>
-  <script>
-    function login() {{
-      const u = document.getElementById('user').value;
-      const p = document.getElementById('pass').value;
-      if (u === 'admin' && p === 'iclub123') {{
-        window.location.href = 'upload.html';
-      }} else {{
-        alert('Login incorreto');
-      }}
-    }}
-  </script>
 </body>
 </html>
