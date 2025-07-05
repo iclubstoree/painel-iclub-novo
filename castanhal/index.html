@@ -1,1 +1,29 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel CASTANHAL</title>
+</head>
+<body>
+  <h1>Painel CASTANHAL</h1>
+  <div id="dados"></div>
+  <script>
+    fetch('dados.json')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('dados').innerHTML = `
+          <p>Total de produtos vendidos: ${
+            data.qtd
+          }</p>
+          <p>Valor total vendido: R$ ${
+            data.vendas.toFixed(2)
+          }</p>
+          <p>Lucro total: R$ ${
+            data.lucro.toFixed(2)
+          }</p>
+        `;
+      });
+  </script>
+</body>
+</html>
