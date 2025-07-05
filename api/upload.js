@@ -1,54 +1,51 @@
 
-const multer = require('multer');
-const fs = require('fs');
-const path = require('path');
-const csv = require('csv-parser');
+import { parse } from 'csv-parse/sync';
+import fs from 'fs';
+import path from 'path';
 
-const upload = multer({ dest: '/tmp' });
-
-module.exports = (req, res) => {
-  if (req.method !== 'POST') {
-    return res.status(405).send('Método não permitido');
-  }
-
-  upload.single('file')(req, res, function (err) {
-    if (err) return res.status(500).send('Erro no upload');
-
-    const lojas = {
-      CASTANHAL: { qtd: 0, vendas: 0, lucro: 0 },
-      BELÉM: { qtd: 0, vendas: 0, lucro: 0 },
-      MIX: { qtd: 0, vendas: 0, lucro: 0 }
-    };
-
-    fs.createReadStream(req.file.path)
-      .pipe(csv({ separator: ';' }))
-      .on('data', (row) => {
-        try {
-          const loja = row['Loja'];
-          const qtd = parseInt(row['Qtd'] || '0');
-          const preco = parseFloat((row['Preço Total'] || '0').replace(/\s/g, '').replace(',', '.'));
-          const lucro = parseFloat((row['Lucro Total'] || '0').replace(/\s/g, '').replace(',', '.'));
-          if (preco > 0 && lojas[loja]) {
-            lojas[loja].qtd += qtd;
-            lojas[loja].vendas += preco;
-            lojas[loja].lucro += lucro;
-          }
-        } catch {}
-      })
-      .on('end', () => {
-        for (const loja in lojas) {
-          const folder = loja.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-          fs.mkdirSync(path.join(process.cwd(), folder), { recursive: true });
-          fs.writeFileSync(
-            path.join(process.cwd(), folder, 'dados.json'),
-            JSON.stringify({
-              qtd: lojas[loja].qtd,
-              vendas: parseFloat(lojas[loja].vendas.toFixed(2)),
-              lucro: parseFloat(lojas[loja].lucro.toFixed(2))
-            })
-          );
-        }
-        res.status(200).send('Planilha processada com sucesso!');
-      });
-  });
+export const config = {
+  api: {
+    bodyParser: false,
+  },
 };
+
+function parseCSV(fileContent) {
+  const records = parse(fileContent, {
+    columns: true,
+    skip_empty_lines: true,
+    trim: true,
+  });
+
+  return records
+    .filter((row) => {
+      const precoTotal = parseFloat(row['Preço Total'].replace('R$', '').replace(',', '.')) || 0;
+      return precoTotal > 0;
+    })
+    .map((row) => ({
+      loja: row['Loja'] || 'Desconhecida',
+      produto: row['Produto'] || 'Sem nome',
+      precoTotal: parseFloat(row['Preço Total'].replace('R$', '').replace(',', '.')) || 0,
+      lucroTotal: parseFloat(row['Lucro Total'].replace('R$', '').replace(',', '.')) || 0,
+    }));
+}
+
+export default async function handler(req, res) {
+  try {
+    const chunks = [];
+    for await (const chunk of req) {
+      chunks.push(chunk);
+    }
+
+    const buffer = Buffer.concat(chunks);
+    const fileContent = buffer.toString('utf-8');
+    const vendas = parseCSV(fileContent);
+
+    // Aqui você pode salvar as vendas no Firebase, banco, etc.
+    console.log('Vendas processadas:', vendas.length);
+
+    res.status(200).json({ message: 'Planilha processada com sucesso!', total: vendas.length });
+  } catch (error) {
+    console.error('Erro ao processar planilha:', error);
+    res.status(500).json({ error: 'Erro interno no servidor ao processar a planilha.' });
+  }
+}
