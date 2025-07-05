@@ -1,67 +1,46 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Painel Administrativo iClub</title>
+  <title>Painel Administrativo</title>
 </head>
 <body>
-  <h1>Login do Painel</h1>
-  <form id="login-form">
-    <input type="text" id="username" placeholder="Usuário" required />
-    <input type="password" id="password" placeholder="Senha" required />
-    <button type="submit">Entrar</button>
-  </form>
+  <h2>Login</h2>
+  <input id="user" placeholder="Usuário" />
+  <input id="pass" type="password" placeholder="Senha" />
+  <button onclick="login()">Entrar</button>
 
-  <div id="upload-area" style="display:none;">
-    <h2>Upload de Planilha</h2>
-    <input type="file" id="csv-file" />
-    <button onclick="uploadFile()">Enviar</button>
-
-    <div id="painel"></div>
+  <div id="painel" style="display:none;">
+    <h3>Painel Administrativo</h3>
+    <input type="file" id="csv" />
+    <button onclick="enviar()">Enviar Planilha</button>
+    <pre id="resultado"></pre>
   </div>
 
   <script>
-    document.getElementById("login-form").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const user = document.getElementById("username").value;
-      const pass = document.getElementById("password").value;
+    function login() {
+      const user = document.getElementById('user').value;
+      const pass = document.getElementById('pass').value;
       if (user === "admin" && pass === "1234") {
-        document.getElementById("login-form").style.display = "none";
-        document.getElementById("upload-area").style.display = "block";
-        fetchPainel();
+        document.querySelector('h2').style.display = 'none';
+        document.getElementById('user').style.display = 'none';
+        document.getElementById('pass').style.display = 'none';
+        document.querySelector('button').style.display = 'none';
+        document.getElementById('painel').style.display = 'block';
       } else {
         alert("Login inválido.");
       }
-    });
-
-    async function uploadFile() {
-      const file = document.getElementById("csv-file").files[0];
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      const msg = await res.text();
-      alert("Resposta do servidor: " + msg);
-      fetchPainel();
     }
 
-    async function fetchPainel() {
-      const res = await fetch("/api/dados");
-      const dados = await res.json();
-      const div = document.getElementById("painel");
-      div.innerHTML = "";
-
-      for (const loja in dados) {
-        const vendas = dados[loja].vendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        const lucro = dados[loja].lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        div.innerHTML += `<h3>${loja}</h3>
-                          <p>Faturamento: ${vendas}</p>
-                          <p>Lucro: ${lucro}</p><hr>`;
-      }
+    async function enviar() {
+      const file = document.getElementById('csv').files[0];
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: file
+      });
+      const text = await res.text();
+      document.getElementById('resultado').innerText = "Resposta do servidor: " + text;
     }
   </script>
 </body>
