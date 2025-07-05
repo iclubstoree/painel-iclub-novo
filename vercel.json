@@ -1,8 +1,5 @@
 {
   "rewrites": [
-    {
-      "source": "/api/upload",
-      "destination": "/api/upload.js"
-    }
+    { "source": "/admin", "destination": "/" }
   ]
 }

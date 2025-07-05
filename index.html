@@ -1,16 +1,48 @@
-
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-  <title>Painel Administrativo</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Administrativo iClub</title>
 </head>
 <body>
-  <h2>Login</h2>
-  <form method="POST" action="/admin" enctype="multipart/form-data">
-    <input type="text" name="username" placeholder="Usuário" required><br>
-    <input type="password" name="password" placeholder="Senha" required><br>
-    <input type="file" name="file" accept=".csv" required><br>
-    <button type="submit">Enviar Planilha</button>
+  <h1>Login do Painel</h1>
+  <form id="login-form">
+    <input type="text" id="username" placeholder="Usuário" required />
+    <input type="password" id="password" placeholder="Senha" required />
+    <button type="submit">Entrar</button>
   </form>
+  <div id="upload-area" style="display:none;">
+    <h2>Upload de Planilha</h2>
+    <input type="file" id="csv-file" />
+    <button onclick="uploadFile()">Enviar</button>
+  </div>
+  <script>
+    document.getElementById("login-form").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const user = document.getElementById("username").value;
+      const pass = document.getElementById("password").value;
+      if (user === "admin" && pass === "1234") {
+        document.getElementById("login-form").style.display = "none";
+        document.getElementById("upload-area").style.display = "block";
+      } else {
+        alert("Login inválido.");
+      }
+    });
+
+    async function uploadFile() {
+      const file = document.getElementById("csv-file").files[0];
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const text = await res.text();
+      alert("Resposta do servidor: " + text);
+    }
+  </script>
 </body>
 </html>
