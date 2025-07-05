@@ -38,6 +38,7 @@ module.exports = (req, res) => {
       .on('end', () => {
         for (const loja in lojas) {
           const folder = loja.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+          fs.mkdirSync(path.join(process.cwd(), folder), { recursive: true });
           fs.writeFileSync(
             path.join(process.cwd(), folder, 'dados.json'),
             JSON.stringify({
