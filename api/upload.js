@@ -1,7 +1,5 @@
 
 import { parse } from 'csv-parse/sync';
-import fs from 'fs';
-import path from 'path';
 
 export const config = {
   api: {
@@ -9,23 +7,27 @@ export const config = {
   },
 };
 
+function limparValor(valor) {
+  if (!valor) return 0;
+  const limpo = valor.replace(/[^0-9,]/g, '').replace(',', '.');
+  return parseFloat(limpo) || 0;
+}
+
 function parseCSV(fileContent) {
   const records = parse(fileContent, {
     columns: true,
     skip_empty_lines: true,
+    delimiter: ';',
     trim: true,
   });
 
   return records
-    .filter((row) => {
-      const precoTotal = parseFloat(row['Preço Total'].replace('R$', '').replace(',', '.')) || 0;
-      return precoTotal > 0;
-    })
+    .filter((row) => limparValor(row['Preço Total']) > 0)
     .map((row) => ({
       loja: row['Loja'] || 'Desconhecida',
       produto: row['Produto'] || 'Sem nome',
-      precoTotal: parseFloat(row['Preço Total'].replace('R$', '').replace(',', '.')) || 0,
-      lucroTotal: parseFloat(row['Lucro Total'].replace('R$', '').replace(',', '.')) || 0,
+      precoTotal: limparValor(row['Preço Total']),
+      lucroTotal: limparValor(row['Lucro Total']),
     }));
 }
 
@@ -40,12 +42,12 @@ export default async function handler(req, res) {
     const fileContent = buffer.toString('utf-8');
     const vendas = parseCSV(fileContent);
 
-    // Aqui você pode salvar as vendas no Firebase, banco, etc.
+    // Aqui você pode salvar os dados onde quiser
     console.log('Vendas processadas:', vendas.length);
 
     res.status(200).json({ message: 'Planilha processada com sucesso!', total: vendas.length });
   } catch (error) {
-    console.error('Erro ao processar planilha:', error);
-    res.status(500).json({ error: 'Erro interno no servidor ao processar a planilha.' });
+    console.error('Erro ao processar a planilha:', error);
+    res.status(500).json({ error: 'Erro interno ao processar a planilha.' });
   }
 }
