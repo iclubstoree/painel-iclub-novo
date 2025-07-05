@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Painel Administrativo</title>
+</head>
+<body>
+  <h1>Painel Administrativo - Upload de Planilha</h1>
+  <input type="file" id="fileInput" accept=".csv"/>
+  <button onclick="enviar()">Enviar</button>
+  <pre id="output"></pre>
+  <script>
+    function enviar() {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) return alert("Escolha uma planilha CSV.");
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        document.getElementById("output").textContent = event.target.result;
+        alert("Planilha lida com sucesso (exemplo). Integração Firebase vem depois.");
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+</html>
