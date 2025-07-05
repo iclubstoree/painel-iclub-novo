@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Painel Administrativo iClub</title>
 </head>
 <body>
@@ -12,11 +11,15 @@
     <input type="password" id="password" placeholder="Senha" required />
     <button type="submit">Entrar</button>
   </form>
+
   <div id="upload-area" style="display:none;">
     <h2>Upload de Planilha</h2>
     <input type="file" id="csv-file" />
     <button onclick="uploadFile()">Enviar</button>
+
+    <div id="painel"></div>
   </div>
+
   <script>
     document.getElementById("login-form").addEventListener("submit", function(e) {
       e.preventDefault();
@@ -25,6 +28,7 @@
       if (user === "admin" && pass === "1234") {
         document.getElementById("login-form").style.display = "none";
         document.getElementById("upload-area").style.display = "block";
+        fetchPainel();
       } else {
         alert("Login inválido.");
       }
@@ -40,8 +44,24 @@
         body: formData,
       });
 
-      const text = await res.text();
-      alert("Resposta do servidor: " + text);
+      const msg = await res.text();
+      alert("Resposta do servidor: " + msg);
+      fetchPainel();
+    }
+
+    async function fetchPainel() {
+      const res = await fetch("/api/dados");
+      const dados = await res.json();
+      const div = document.getElementById("painel");
+      div.innerHTML = "";
+
+      for (const loja in dados) {
+        const vendas = dados[loja].vendas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        const lucro = dados[loja].lucro.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        div.innerHTML += `<h3>${loja}</h3>
+                          <p>Faturamento: ${vendas}</p>
+                          <p>Lucro: ${lucro}</p><hr>`;
+      }
     }
   </script>
 </body>
