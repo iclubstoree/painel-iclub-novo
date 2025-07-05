@@ -19,32 +19,24 @@ export default async function handler(req, res) {
     const records = parse(csvString, {
       columns: true,
       skip_empty_lines: true,
-      delimiter: ';',
+      delimiter: ',',
       trim: true
     });
 
     const resumo = {};
     for (const row of records) {
-      const loj = row['Loja']?.trim() || 'Desconhecida';
-      const preco = parseFloat(
-        row['Preço Total']
-          .replace(/R\$|\s/g, '')
-          .replace(/\.(?=\d{3},)/g, '')
-          .replace(',', '.')
-      );
+      const loja = row['Loja']?.trim();
+      const precoStr = row['Preço Total']?.replace(/\./g, '').replace(',', '.').trim();
+      const lucroStr = row['Lucro Total']?.replace(/\./g, '').replace(',', '.').trim();
 
-      const lucro = parseFloat(
-        row['Lucro Total']
-          .replace(/R\$|\s/g, '')
-          .replace(/\.(?=\d{3},)/g, '')
-          .replace(',', '.')
-      );
+      const preco = parseFloat(precoStr);
+      const lucro = parseFloat(lucroStr);
 
-      if (!preco || preco <= 0) continue;
+      if (!preco || preco <= 0 || !loja) continue;
 
-      if (!resumo[loj]) resumo[loj] = { vendas: 0, lucro: 0 };
-      resumo[loj].vendas += preco;
-      resumo[loj].lucro += lucro;
+      if (!resumo[loja]) resumo[loja] = { vendas: 0, lucro: 0 };
+      resumo[loja].vendas += preco;
+      resumo[loja].lucro += isNaN(lucro) ? 0 : lucro;
     }
 
     writeFileSync("/tmp/dados.json", JSON.stringify(resumo));
