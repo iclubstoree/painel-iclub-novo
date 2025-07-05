@@ -6,27 +6,51 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).send("Method Not Allowed");
+  try {
+    if (req.method !== "POST") {
+      return res.status(405).send("Method Not Allowed");
+    }
 
-  const chunks = [];
-  req.on("data", chunk => chunks.push(chunk));
-  req.on("end", () => {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
     const buffer = Buffer.concat(chunks);
-    const csv = buffer.toString("utf-8");
-    const records = parse(csv, { columns: true, skip_empty_lines: true });
+    const csvString = buffer.toString("utf-8");
 
-    const resumo = {};
-    records.forEach(({ Loja, Produto, "Preço Total": preco, "Lucro Total": lucro }) => {
-      const valor = parseFloat(preco.replace(",", "."));
-      const ganho = parseFloat(lucro.replace(",", "."));
-      if (!valor || valor === 0) return;
-
-      if (!resumo[Loja]) resumo[Loja] = { vendas: 0, lucro: 0 };
-      resumo[Loja].vendas += valor;
-      resumo[Loja].lucro += ganho;
+    const records = parse(csvString, {
+      columns: true,
+      skip_empty_lines: true,
+      delimiter: ';',
+      trim: true
     });
 
+    const resumo = {};
+    for (const row of records) {
+      const loj = row['Loja']?.trim() || 'Desconhecida';
+      const preco = parseFloat(
+        row['Preço Total']
+          .replace(/R\$|\s/g, '')
+          .replace(/\.(?=\d{3},)/g, '')
+          .replace(',', '.')
+      );
+
+      const lucro = parseFloat(
+        row['Lucro Total']
+          .replace(/R\$|\s/g, '')
+          .replace(/\.(?=\d{3},)/g, '')
+          .replace(',', '.')
+      );
+
+      if (!preco || preco <= 0) continue;
+
+      if (!resumo[loj]) resumo[loj] = { vendas: 0, lucro: 0 };
+      resumo[loj].vendas += preco;
+      resumo[loj].lucro += lucro;
+    }
+
     writeFileSync("/tmp/dados.json", JSON.stringify(resumo));
-    res.status(200).send("Upload concluído com sucesso");
-  });
+    return res.status(200).send("Upload concluído! Lojas: " + Object.keys(resumo).join(", "));
+  } catch (err) {
+    console.error("Erro na função upload:", err);
+    return res.status(500).send("Erro interno: " + err.message);
+  }
 }
