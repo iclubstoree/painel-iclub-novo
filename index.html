@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Upload de Planilha</title>
+  </head>
+  <body>
+    <h1>Upload de Planilha</h1>
+    <form id="uploadForm" enctype="multipart/form-data">
+      <input type="file" id="fileInput" accept=".csv" />
+      <button type="submit">Enviar</button>
+    </form>
+    <p id="response"></p>
+
+    <script>
+      document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const file = document.getElementById('fileInput').files[0];
+        if (!file) {
+          alert("Selecione um arquivo CSV.");
+          return;
+        }
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const text = await response.text();
+        document.getElementById("response").innerText = "Resposta do servidor: " + text;
+      });
+    </script>
+  </body>
+</html>
