@@ -1,9 +1,8 @@
 export const firebaseConfig = {
-  apiKey: "SUA_CHAVE_API",
-  authDomain: "painel-iclub-7b727.firebaseapp.com",
-  databaseURL: "https://painel-iclub-7b727-default-rtdb.firebaseio.com",
-  projectId: "painel-iclub-7b727",
-  storageBucket: "painel-iclub-7b727.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID"
+  apiKey: "SUA_API_KEY",
+  authDomain: "SEU_DOMINIO.firebaseapp.com",
+  projectId: "SEU_PROJECT_ID",
+  storageBucket: "SEU_BUCKET.appspot.com",
+  messagingSenderId: "SEU_SENDER_ID",
+  appId: "SEU_APP_ID"
 };

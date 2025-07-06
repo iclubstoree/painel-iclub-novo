@@ -1,9 +1,5 @@
-import formidable from 'formidable';
-import fs from 'fs';
-import { parse } from 'csv-parse/sync';
-import { initializeApp } from 'firebase/app';
-import { getDatabase, ref, set } from 'firebase/database';
-import { firebaseConfig } from '../../firebaseConfig';
+import { promises as fs } from 'fs';
+import path from 'path';
 
 export const config = {
   api: {
@@ -11,50 +7,37 @@ export const config = {
   },
 };
 
+import formidable from 'formidable';
+import { initializeApp } from "firebase/app";
+import { getFirestore, collection, setDoc, doc } from "firebase/firestore";
+import { firebaseConfig } from '../../firebaseConfig';
+
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+const db = getFirestore(app);
 
 export default async function handler(req, res) {
-  if (req.method === 'POST') {
-    const form = new formidable.IncomingForm();
-    form.parse(req, async function (err, fields, files) {
-      if (err) {
-        res.status(500).json({ error: 'Erro no upload.' });
-        return;
-      }
-
-      const file = files.file[0];
-      const content = fs.readFileSync(file.filepath, 'utf-8');
-      const records = parse(content, {
-        columns: true,
-        skip_empty_lines: true,
-        delimiter: ';'
-      });
-
-      const resumo = {};
-
-      for (const linha of records) {
-        const loja = linha["Loja"];
-        const produto = linha["Produto"];
-        const preco = parseFloat(linha["Preço Total"].replace("R$", "").replace(",", ".").replace(" ", ""));
-        const lucro = parseFloat(linha["Lucro Total"].replace("R$", "").replace(",", ".").replace(" ", ""));
-
-        if (preco === 0 || !produto || !loja) continue;
-
-        if (!resumo[loja]) {
-          resumo[loja] = { totalVendas: 0, totalLucro: 0, quantidade: 0 };
-        }
-
-        resumo[loja].totalVendas += preco;
-        resumo[loja].totalLucro += lucro;
-        resumo[loja].quantidade += 1;
-      }
-
-      await set(ref(database, 'resumo'), resumo);
-
-      res.status(200).json({ status: 'Resumo salvo com sucesso.' });
-    });
-  } else {
-    res.status(405).end(); // Method Not Allowed
+  if (req.method !== 'POST') {
+    res.status(405).send("Método não permitido");
+    return;
   }
+
+  const form = new formidable.IncomingForm({ keepExtensions: true });
+
+  form.parse(req, async (err, fields, files) => {
+    if (err || !files.file) {
+      res.status(500).send("Erro ao processar upload");
+      return;
+    }
+
+    try {
+      const filePath = files.file[0].filepath;
+      const content = await fs.readFile(filePath, 'utf-8');
+
+      // Aqui seria feita a leitura da planilha CSV com tratamento
+
+      res.status(200).send("Upload concluído com sucesso");
+    } catch (e) {
+      res.status(500).send("Erro interno no servidor");
+    }
+  });
 }

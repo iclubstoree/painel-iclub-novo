@@ -1,35 +1,13 @@
-
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <title>Upload de Planilha</title>
-</head>
-<body>
+<html>
+  <head>
+    <title>Painel iClub</title>
+  </head>
+  <body>
     <h1>Upload de Planilha</h1>
-    <form id="upload-form" enctype="multipart/form-data">
-        <input type="file" name="file" id="file" />
-        <button type="submit">Enviar</button>
+    <form action="/api/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="file" />
+      <button type="submit">Enviar</button>
     </form>
-    <pre id="response"></pre>
-    <script>
-        const form = document.getElementById('upload-form');
-        const responseBox = document.getElementById('response');
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const fileInput = document.getElementById('file');
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            const text = await res.text();
-            responseBox.textContent = "Resposta do servidor: " + text;
-        });
-    </script>
-</body>
+  </body>
 </html>
