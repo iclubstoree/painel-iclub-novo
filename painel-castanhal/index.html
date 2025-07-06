@@ -2,18 +2,30 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Painel Castanhal</title>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h1>Painel de Vendas - Castanhal</h1>
-  <div id="dados">
-    <p>Carregando dados do Firebase...</p>
-  </div>
+  <h1>Painel Castanhal</h1>
+  <div id="dados">Carregando...</div>
   <script>
-    // Aqui virá o script de leitura do Firebase
-    document.getElementById("dados").innerText = "Dados em breve :)";
+    const firebaseConfig = {
+      apiKey: "FAKE_API_KEY",
+      authDomain: "painel-iclub.firebaseapp.com",
+      databaseURL: "https://painel-iclub-default-rtdb.firebaseio.com",
+      projectId: "painel-iclub",
+      storageBucket: "painel-iclub.appspot.com",
+      messagingSenderId: "000000000000",
+      appId: "1:000000000000:web:abc123"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    db.ref("castanhal").on("value", (snapshot) => {
+      const dados = snapshot.val();
+      document.getElementById("dados").innerText = JSON.stringify(dados, null, 2);
+    });
   </script>
 </body>
 </html>
