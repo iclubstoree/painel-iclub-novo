@@ -1,10 +1,9 @@
-
-import { initializeApp } from "firebase/app";
-import { getDatabase, ref, set } from "firebase/database";
-import formidable from "formidable";
-import fs from "fs";
-import csv from "csv-parser";
-import { firebaseConfig } from "../../firebaseConfig";
+import formidable from 'formidable';
+import fs from 'fs';
+import { parse } from 'csv-parse/sync';
+import { initializeApp } from 'firebase/app';
+import { getDatabase, ref, set } from 'firebase/database';
+import { firebaseConfig } from '../../firebaseConfig';
 
 export const config = {
   api: {
@@ -13,45 +12,49 @@ export const config = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+const database = getDatabase(app);
 
 export default async function handler(req, res) {
-  const form = new formidable.IncomingForm();
+  if (req.method === 'POST') {
+    const form = new formidable.IncomingForm();
+    form.parse(req, async function (err, fields, files) {
+      if (err) {
+        res.status(500).json({ error: 'Erro no upload.' });
+        return;
+      }
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      res.status(500).send("Erro ao fazer upload.");
-      return;
-    }
-
-    const file = files.file[0];
-    const results = [];
-
-    fs.createReadStream(file.filepath)
-      .pipe(csv({ separator: ";" }))
-      .on("data", (data) => {
-        if (data["Preço Total"] !== "0") results.push(data);
-      })
-      .on("end", async () => {
-        try {
-          const resumo = {};
-          results.forEach((row) => {
-            const loja = row["Loja"];
-            const preco = parseFloat(row["Preço Total"].replace("R$", "").replace(",", ".").trim()) || 0;
-            const lucro = parseFloat(row["Lucro Total"].replace("R$", "").replace(",", ".").trim()) || 0;
-
-            if (!resumo[loja]) resumo[loja] = { total: 0, lucro: 0, produtos: 0 };
-            resumo[loja].total += preco;
-            resumo[loja].lucro += lucro;
-            resumo[loja].produtos += 1;
-          });
-
-          await set(ref(db, "resumo"), resumo);
-          res.status(200).send("Resumo salvo com sucesso.");
-        } catch (error) {
-          console.error(error);
-          res.status(500).send("Erro ao salvar no Firebase.");
-        }
+      const file = files.file[0];
+      const content = fs.readFileSync(file.filepath, 'utf-8');
+      const records = parse(content, {
+        columns: true,
+        skip_empty_lines: true,
+        delimiter: ';'
       });
-  });
+
+      const resumo = {};
+
+      for (const linha of records) {
+        const loja = linha["Loja"];
+        const produto = linha["Produto"];
+        const preco = parseFloat(linha["Preço Total"].replace("R$", "").replace(",", ".").replace(" ", ""));
+        const lucro = parseFloat(linha["Lucro Total"].replace("R$", "").replace(",", ".").replace(" ", ""));
+
+        if (preco === 0 || !produto || !loja) continue;
+
+        if (!resumo[loja]) {
+          resumo[loja] = { totalVendas: 0, totalLucro: 0, quantidade: 0 };
+        }
+
+        resumo[loja].totalVendas += preco;
+        resumo[loja].totalLucro += lucro;
+        resumo[loja].quantidade += 1;
+      }
+
+      await set(ref(database, 'resumo'), resumo);
+
+      res.status(200).json({ status: 'Resumo salvo com sucesso.' });
+    });
+  } else {
+    res.status(405).end(); // Method Not Allowed
+  }
 }
