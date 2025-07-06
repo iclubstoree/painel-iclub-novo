@@ -11,20 +11,31 @@
   <h1>Painel Castanhal</h1>
   <div id="dados">Carregando...</div>
   <script>
-    const firebaseConfig = {
-      apiKey: "FAKE_API_KEY",
-      authDomain: "painel-iclub.firebaseapp.com",
-      databaseURL: "https://painel-iclub-default-rtdb.firebaseio.com",
-      projectId: "painel-iclub",
-      storageBucket: "painel-iclub.appspot.com",
-      messagingSenderId: "000000000000",
-      appId: "1:000000000000:web:abc123"
-    };
+    
+const firebaseConfig = {
+  apiKey: "AIzaSyD_FAKE_KEY",
+  authDomain: "iclubstoree.firebaseapp.com",
+  databaseURL: "https://iclubstoree-default-rtdb.firebaseio.com",
+  projectId: "iclubstoree",
+  storageBucket: "iclubstoree.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "1:000000000000:web:abc123"
+};
+
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     db.ref("castanhal").on("value", (snapshot) => {
       const dados = snapshot.val();
-      document.getElementById("dados").innerText = JSON.stringify(dados, null, 2);
+      if (!dados) {
+        document.getElementById("dados").innerText = "Nenhum dado disponível ainda.";
+        return;
+      }
+      let lista = "<ul>";
+      for (const item of dados) {
+        lista += `<li>${item.Produto} – R$ ${item.Preco}</li>`;
+      }
+      lista += "</ul>";
+      document.getElementById("dados").innerHTML = lista;
     });
   </script>
 </body>
