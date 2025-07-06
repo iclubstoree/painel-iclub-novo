@@ -1,8 +1,10 @@
+
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, set } from "firebase/database";
 import formidable from "formidable";
 import fs from "fs";
-import csvParser from "csv-parser";
+import csv from "csv-parser";
+import { firebaseConfig } from "../../firebaseConfig";
 
 export const config = {
   api: {
@@ -10,50 +12,46 @@ export const config = {
   },
 };
 
-const firebaseConfig = {
-  apiKey: "SUA_CHAVE",
-  authDomain: "SEU_DOMINIO.firebaseapp.com",
-  databaseURL: "https://SEU_DOMINIO.firebaseio.com",
-  projectId: "SEU_ID",
-  storageBucket: "SEU_BUCKET.appspot.com",
-  messagingSenderId: "SENDER_ID",
-  appId: "APP_ID",
-};
-
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 export default async function handler(req, res) {
-  const form = formidable({ multiples: false });
-  form.parse(req, async (err, fields, files) => {
-    if (err) return res.status(500).send("Erro ao processar arquivo");
+  const form = new formidable.IncomingForm();
 
-    const filePath = files.file.filepath;
+  form.parse(req, async (err, fields, files) => {
+    if (err) {
+      res.status(500).send("Erro ao fazer upload.");
+      return;
+    }
+
+    const file = files.file[0];
     const results = [];
 
-    fs.createReadStream(filePath)
-      .pipe(csvParser({ separator: ";" }))
+    fs.createReadStream(file.filepath)
+      .pipe(csv({ separator: ";" }))
       .on("data", (data) => {
-        const loja = data["Loja"]?.trim();
-        const produto = data["Produto"]?.trim();
-        const preco = parseFloat(data["Preço Total"].replace("R$", "").replace(",", ".").replace(/\s/g, ""));
-        const lucro = parseFloat(data["Lucro Total"].replace("R$", "").replace(",", ".").replace(/\s/g, ""));
-        if (loja && produto && preco > 0) {
-          results.push({ loja, produto, preco, lucro });
-        }
+        if (data["Preço Total"] !== "0") results.push(data);
       })
       .on("end", async () => {
-        const resumo = {};
+        try {
+          const resumo = {};
+          results.forEach((row) => {
+            const loja = row["Loja"];
+            const preco = parseFloat(row["Preço Total"].replace("R$", "").replace(",", ".").trim()) || 0;
+            const lucro = parseFloat(row["Lucro Total"].replace("R$", "").replace(",", ".").trim()) || 0;
 
-        for (const item of results) {
-          if (!resumo[item.loja]) resumo[item.loja] = { vendas: 0, lucro: 0, produtos: 0 };
-          resumo[item.loja].vendas += item.preco;
-          resumo[item.loja].lucro += item.lucro;
-          resumo[item.loja].produtos += 1;
+            if (!resumo[loja]) resumo[loja] = { total: 0, lucro: 0, produtos: 0 };
+            resumo[loja].total += preco;
+            resumo[loja].lucro += lucro;
+            resumo[loja].produtos += 1;
+          });
+
+          await set(ref(db, "resumo"), resumo);
+          res.status(200).send("Resumo salvo com sucesso.");
+        } catch (error) {
+          console.error(error);
+          res.status(500).send("Erro ao salvar no Firebase.");
         }
-
-        await set(ref(db, "vendas"), resumo);
-        res.status(200).send("Upload e gravação no Firebase concluídos.");
       });
   });
 }
