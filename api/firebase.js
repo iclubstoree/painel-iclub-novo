@@ -1,0 +1,1 @@
+// Firebase config for painel-iclub-novo
